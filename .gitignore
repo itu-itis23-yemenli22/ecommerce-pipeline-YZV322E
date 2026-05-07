@@ -1,0 +1,20 @@
+# Secrets
+.env
+
+# Data files (commit only sample)
+data/*.csv
+!data/sample/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Airflow
+logs/
+airflow.db
+
+# OS
+.DS_Store
+Thumbs.db
