@@ -196,13 +196,31 @@ The system will:
 
 ## Dashboards
 
-After the pipeline runs, set up Kibana index patterns and import the dashboards:
+### Step 1: Run the ETL pipeline
 
-1. Go to **Stack Management → Index Patterns**
-2. Create: `olist_orders` (time field: `order_purchase_timestamp`), `olist_products*`, `olist_sellers`
-3. Go to **Dashboard** and open **Olist E-Commerce Analytics**
+1. Open Airflow at http://localhost:8080 (user: `admin`, password: your `AIRFLOW_ADMIN_PASSWORD`)
+2. Click on `dag_etl_pipeline`
+3. Click **▶ Trigger DAG** and wait for all 3 tasks to turn green (~5 minutes)
 
-| Dashboard | Description |
+### Step 2: Create Kibana index patterns
+
+1. Open Kibana at http://localhost:5601
+2. Go to **Stack Management → Index Patterns → Create index pattern**
+3. Create the following 3 patterns:
+
+| Pattern | Time field |
+|---|---|
+| `olist_orders` | `order_purchase_timestamp` |
+| `olist_products*` | (no time field) |
+| `olist_sellers` | (no time field) |
+
+### Step 3: Open the dashboard
+
+1. Go to **Dashboard** in the left menu
+2. Open **Olist E-Commerce Analytics**
+3. Set the time range to `Jan 1, 2016 → Dec 31, 2018`
+
+| Visualization | Description |
 |---|---|
 | Aylık Sipariş Hacmi | Monthly order volume trend (2016–2018) |
 | Kategori Bazlı Gelir Dağılımı | Revenue distribution by product category (pie chart) |
