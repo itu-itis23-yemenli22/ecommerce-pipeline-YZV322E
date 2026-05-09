@@ -113,11 +113,11 @@ def bulk_index(index_name: str, docs: list, id_field: str = None) -> dict:
     """
     Bulk-index a list of dicts into the given index.
     If id_field is provided, uses its value as the document _id.
-    Returns the bulk API response summary.
+    Returns a summary with counts and the list of failed document IDs.
     """
     if not docs:
         logger.info("No documents to index for %s", index_name)
-        return {"indexed": 0, "errors": 0}
+        return {"indexed": 0, "errors": 0, "failed_ids": []}
 
     def _actions():
         for doc in docs:
@@ -127,9 +127,20 @@ def bulk_index(index_name: str, docs: list, id_field: str = None) -> dict:
             yield action
 
     success, errors = helpers.bulk(get_es(), _actions(), raise_on_error=False)
-    logger.info("Bulk indexed %d docs into '%s' (%d errors)",
-                success, index_name, len(errors))
-    return {"indexed": success, "errors": len(errors)}
+
+    failed_ids = []
+    for err in errors:
+        for details in err.values():
+            if "_id" in details:
+                failed_ids.append(details["_id"])
+
+    if errors:
+        logger.warning("Bulk index into '%s': %d ok, %d failed",
+                       index_name, success, len(errors))
+    else:
+        logger.info("Bulk indexed %d docs into '%s'", success, index_name)
+
+    return {"indexed": success, "errors": len(errors), "failed_ids": failed_ids}
 
 
 def get_index_count(index_name: str) -> int:

@@ -5,6 +5,7 @@ Import from here — never hardcode these values in individual DAGs.
 """
 
 import os
+from datetime import timedelta
 
 # Airflow connection IDs (defined in Airflow UI or via env)
 POSTGRES_CONN_ID = "olist_postgres"
@@ -18,7 +19,7 @@ DEFAULT_ARGS = {
     "owner":            DAG_OWNER,
     "depends_on_past":  False,
     "retries":          2,
-    "retry_delay_seconds": 30,
+    "retry_delay":      timedelta(seconds=30),
     "email_on_failure": False,
     "email_on_retry":   False,
 }

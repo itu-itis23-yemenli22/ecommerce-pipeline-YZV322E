@@ -50,10 +50,11 @@ def _sync_orders() -> int:
         result = bulk_index(INDEX_ORDERS, docs, id_field="order_id")
 
         if result["indexed"] > 0:
-            order_ids = [r["order_id"] for r in rows]
+            failed_ids = set(result["failed_ids"])
+            synced_ids = [r["order_id"] for r in rows if r["order_id"] not in failed_ids]
             with get_connection() as conn:
                 with conn.cursor() as cur:
-                    cur.execute(MARK_ORDERS_SYNCED_SQL, (order_ids,))
+                    cur.execute(MARK_ORDERS_SYNCED_SQL, (synced_ids,))
             total_indexed += result["indexed"]
 
         if len(rows) < BATCH_SIZE:

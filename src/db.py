@@ -13,6 +13,7 @@ from datetime import datetime
 from typing import Optional
 
 import psycopg2
+import psycopg2.extras
 from psycopg2 import pool, sql
 
 logger = logging.getLogger(__name__)
@@ -119,14 +120,3 @@ def execute_query(query: str, params: tuple = ()) -> list:
             columns = [desc[0] for desc in cur.description]
             return [dict(zip(columns, row)) for row in cur.fetchall()]
 
-
-def execute_many(query: str, records: list) -> int:
-    """Bulk-insert/update. Returns the number of rows affected."""
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            psycopg2.extras.execute_batch(cur, query, records, page_size=500)
-            return cur.rowcount
-
-
-# register extras after import so execute_batch is available
-import psycopg2.extras  # noqa: E402 (intentional late import)

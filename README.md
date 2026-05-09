@@ -102,7 +102,7 @@ Download the dataset and place all CSV files inside the `data/` directory before
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (v24+)
-- 16 GB RAM recommended
+- 8 GB RAM minimum, 16 GB recommended
 - ~20 GB free disk space
 - No Python, Java, or any other runtime required on the host machine
 
@@ -277,7 +277,6 @@ ecommerce-pipeline/
 - Elasticsearch runs in single-node mode with security disabled — not suitable for production.
 - The `olist_geolocation` table (~1M rows) significantly increases initial load time.
 - Kibana index patterns must be recreated manually after `docker compose down -v` since Kibana's volume is cleared.
-- `dag_sync_scheduler` skips gracefully when no unsynced rows exist, which may appear as a failed run in the Airflow UI.
 
 ---
 

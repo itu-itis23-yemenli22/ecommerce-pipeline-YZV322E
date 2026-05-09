@@ -11,6 +11,7 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.empty import EmptyOperator
+from airflow.exceptions import AirflowSkipException
 
 from airflow_settings import DEFAULT_ARGS, SRC_PATH
 
@@ -30,7 +31,7 @@ def _check_staging_has_data(**context):
     unsynced = rows[0]["cnt"] if rows else 0
     context["ti"].xcom_push(key="unsynced_count", value=unsynced)
     if unsynced == 0:
-        raise Exception("No unsynced rows — skipping sync gracefully.")
+        raise AirflowSkipException("No unsynced rows — skipping sync.")
     return unsynced
 
 

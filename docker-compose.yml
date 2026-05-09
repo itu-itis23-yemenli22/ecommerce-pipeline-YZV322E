@@ -192,6 +192,7 @@ services:
       ES_PORT: ${ES_PORT}
       ES_INDEX_ORDERS: ${ES_INDEX_ORDERS}
       ES_INDEX_PRODUCTS: ${ES_INDEX_PRODUCTS}
+      ES_INDEX_SELLERS: ${ES_INDEX_SELLERS}
       BATCH_SIZE: ${BATCH_SIZE}
     depends_on:
       postgres:

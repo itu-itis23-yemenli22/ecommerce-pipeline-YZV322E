@@ -5,7 +5,7 @@ Used by transform.py and sync.py for type-safe data handling.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -27,7 +27,7 @@ class OrderEnriched:
     item_count: int
     avg_review_score: Optional[float]
     synced_to_es: bool = False
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_es_doc(self) -> dict:
         """Serialize to Elasticsearch document format."""
@@ -65,7 +65,7 @@ class ProductRevenue:
     total_revenue: float
     total_orders: int
     avg_price: float
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_es_doc(self) -> dict:
         return {
@@ -86,7 +86,7 @@ class SellerPerformance:
     total_revenue: float
     avg_review_score: Optional[float]
     on_time_rate: Optional[float]
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_es_doc(self) -> dict:
         return {
@@ -106,6 +106,6 @@ class PipelineRun:
     run_type: str   # 'load' | 'transform' | 'sync'
     status: str     # 'running' | 'success' | 'failed'
     rows_processed: int = 0
-    started_at: datetime = field(default_factory=datetime.utcnow)
+    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     finished_at: Optional[datetime] = None
     error_message: Optional[str] = None
