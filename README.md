@@ -113,7 +113,7 @@ Download the dataset and place all CSV files inside the `data/` directory before
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/<your-org>/ecommerce-pipeline.git
+git clone https://github.com/itu-itis23-yemenli22/ecommerce-pipeline-YZV322E.git
 cd ecommerce-pipeline
 ```
 
@@ -285,6 +285,6 @@ ecommerce-pipeline/
 
 | Name | Student ID | Department |
 |---|---|---|
-| Enes Yüksel | 150220311 | AI & Data Engineering, ITU |
+| Enes Yüksel | 1150230722 | AI & Data Engineering, ITU |
 | Emre Günel | — | AI & Data Engineering, ITU |
-| Enes Yemenli | — | AI & Data Engineering, ITU |
+| Enes Yemenli | 150220311 | AI & Data Engineering, ITU |
