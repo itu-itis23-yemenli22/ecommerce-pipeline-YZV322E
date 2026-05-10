@@ -92,8 +92,10 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.18
     env_file: .env
-    volumes:
-      - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_NAME=kibana
+      - SERVER_HOST=0.0.0.0
     ports:
       - "5601:5601"
     depends_on:
@@ -192,7 +194,6 @@ services:
       ES_PORT: ${ES_PORT}
       ES_INDEX_ORDERS: ${ES_INDEX_ORDERS}
       ES_INDEX_PRODUCTS: ${ES_INDEX_PRODUCTS}
-      ES_INDEX_SELLERS: ${ES_INDEX_SELLERS}
       BATCH_SIZE: ${BATCH_SIZE}
     depends_on:
       postgres:
