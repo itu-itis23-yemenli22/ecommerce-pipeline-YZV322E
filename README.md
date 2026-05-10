@@ -30,7 +30,7 @@
 
 This project implements a fully containerized, end-to-end data engineering pipeline for analyzing e-commerce order data from the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce). The entire system — including all Python ETL code, databases, orchestration, and visualization tools — runs inside Docker containers and can be launched with a single command.
 
-The pipeline ingests over 100,000 real-world orders, applies schema normalization and data quality transformations, synchronizes processed data into Elasticsearch for high-performance indexing, and exposes interactive dashboards through Kibana covering order trends, category-level revenue, delivery performance, and shipment delay analysis.
+The pipeline ingests over 100,000 real-world orders, applies schema normalization and data quality transformations, synchronizes processed data into Elasticsearch for high-performance indexing, and exposes interactive dashboards through Kibana covering order trends, category-level revenue, and shipment delay analysis.
 
 ---
 
@@ -68,7 +68,7 @@ CSV Files (Olist Dataset)
 2. `etl-transform` joins and enriches data into the `staging` schema
 3. `etl-sync` performs incremental sync from `staging` → Elasticsearch
 4. Apache Airflow orchestrates and schedules the entire pipeline
-5. Kibana visualizes the indexed data through 4 dashboards
+5. Kibana visualizes the indexed data through 3 interactive dashboards
 
 ---
 
@@ -93,9 +93,11 @@ Download the dataset and place all CSV files inside the `data/` directory before
 | `kibana` | kibana:7.17.18 | 5601 | Dashboards and visualization |
 | `airflow-webserver` | apache/airflow:2.8.4 | 8080 | Airflow UI |
 | `airflow-scheduler` | apache/airflow:2.8.4 | — | DAG scheduling |
-| `etl-loader` | custom (Dockerfile.etl) | — | CSV → PostgreSQL |
-| `etl-transform` | custom (Dockerfile.etl) | — | raw → staging transformation |
-| `etl-sync` | custom (Dockerfile.etl) | — | staging → Elasticsearch sync |
+| `etl-loader` | custom (Dockerfile.etl) | — | CSV → PostgreSQL (triggered by Airflow) |
+| `etl-transform` | custom (Dockerfile.etl) | — | raw → staging transformation (triggered by Airflow) |
+| `etl-sync` | custom (Dockerfile.etl) | — | staging → Elasticsearch sync (triggered by Airflow) |
+
+> **Note:** ETL services use Docker Compose `profiles: [etl]` and are not started automatically. They are triggered exclusively by Airflow DAGs.
 
 ---
 
@@ -114,7 +116,7 @@ Download the dataset and place all CSV files inside the `data/` directory before
 
 ```bash
 git clone https://github.com/itu-itis23-yemenli22/ecommerce-pipeline-YZV322E.git
-cd ecommerce-pipeline
+cd ecommerce-pipeline-YZV322E
 ```
 
 ### 2. Download the dataset
@@ -150,20 +152,23 @@ AIRFLOW__WEBSERVER__SECRET_KEY=   # generate same way, use a different value
 AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://olist_user:your_password_here@postgres:5432/olist_db
 ```
 
-### 4. Launch the pipeline
+### 4. Launch the infrastructure
 
 ```bash
 docker compose up --build
 ```
 
-The system will:
-1. Pull all required images
-2. Build the custom ETL image
-3. Initialize PostgreSQL schema (`sql/init.sql`)
-4. Run `etl-loader` → `etl-transform` → `etl-sync` automatically
-5. Start Airflow, Kibana, and pgAdmin
+This starts all infrastructure services: PostgreSQL, Elasticsearch, Kibana, Airflow, and pgAdmin. The ETL services (loader, transform, sync) are **not** started automatically — they are triggered through Airflow.
 
-**The system is fully up within ~10 minutes on first run.**
+**All services are fully up within ~5 minutes on first run.**
+
+### 5. Trigger the ETL pipeline
+
+1. Open Airflow at http://localhost:8080
+2. Click on `dag_etl_pipeline`
+3. Click the **▶ Trigger DAG** button
+4. Monitor task execution: `load_csv_to_postgres` → `transform_raw_to_staging` → `sync_staging_to_elasticsearch`
+5. Wait for all 3 tasks to turn green (~5 minutes)
 
 ---
 
@@ -176,17 +181,11 @@ The system will:
 | Airflow | http://localhost:8080 | `admin` / your `AIRFLOW_ADMIN_PASSWORD` |
 | Kibana | http://localhost:5601 | No auth required |
 | pgAdmin | http://localhost:5050 | `admin@olist.com` / your `POSTGRES_PASSWORD` |
-
-### Trigger the ETL pipeline manually (Airflow)
-
-1. Open http://localhost:8080
-2. Click on `dag_etl_pipeline`
-3. Click the **▶ Trigger DAG** button
-4. Monitor task execution: `load_csv_to_postgres` → `transform_raw_to_staging` → `sync_staging_to_elasticsearch`
+| Elasticsearch | http://localhost:9200 | No auth required |
 
 ### Scheduled sync
 
-`dag_sync_scheduler` runs **hourly** and incrementally syncs any unsynced rows from PostgreSQL staging to Elasticsearch. No manual intervention needed.
+`dag_sync_scheduler` runs **hourly** and incrementally syncs any unsynced rows from PostgreSQL staging to Elasticsearch. When no new data exists, the sync task is gracefully skipped (shown as yellow in Airflow UI).
 
 ### Health monitoring
 
@@ -196,13 +195,7 @@ The system will:
 
 ## Dashboards
 
-### Step 1: Run the ETL pipeline
-
-1. Open Airflow at http://localhost:8080 (user: `admin`, password: your `AIRFLOW_ADMIN_PASSWORD`)
-2. Click on `dag_etl_pipeline`
-3. Click **▶ Trigger DAG** and wait for all 3 tasks to turn green (~5 minutes)
-
-### Step 2: Create Kibana index patterns
+### Step 1: Create Kibana index patterns
 
 1. Open Kibana at http://localhost:5601
 2. Go to **Stack Management → Index Patterns → Create index pattern**
@@ -214,7 +207,7 @@ The system will:
 | `olist_products*` | (no time field) |
 | `olist_sellers` | (no time field) |
 
-### Step 3: Open the dashboard
+### Step 2: Open the dashboard
 
 1. Go to **Dashboard** in the left menu
 2. Open **Olist E-Commerce Analytics**
@@ -222,17 +215,17 @@ The system will:
 
 | Visualization | Description |
 |---|---|
-| Aylık Sipariş Hacmi | Monthly order volume trend (2016–2018) |
-| Kategori Bazlı Gelir Dağılımı | Revenue distribution by product category (pie chart) |
-| Eyalet Bazlı Ort. Teslimat Süresi | Average delivery days per Brazilian state |
-| Eyalet Bazlı Gecikme Oranı | Delayed shipment rate per state (treemap) |
+| Monthly Order Volume | Monthly order trend (2016–2018), bar chart |
+| Revenue by Category | Revenue distribution by product category, pie chart |
+| Average Delivery Days by State | Average delivery time per Brazilian state, horizontal bar chart |
+| Shipment Delay Rate by State | Delayed shipment rate per Brazilian state, treemap |
 
 ---
 
 ## Project Structure
 
 ```
-ecommerce-pipeline/
+ecommerce-pipeline-YZV322E/
 ├── docker-compose.yml          # All services defined here
 ├── Dockerfile.etl              # Custom image for ETL services
 ├── requirements.txt            # Python dependencies
@@ -243,26 +236,24 @@ ecommerce-pipeline/
 │
 ├── src/                        # ETL source modules
 │   ├── db.py                   # PostgreSQL connection pool
-│   ├── es_client.py            # Elasticsearch client
+│   ├── es_client.py            # Elasticsearch client & index management
 │   ├── models.py               # Dataclass definitions
 │   ├── loader.py               # CSV → PostgreSQL (raw schema)
 │   ├── transform.py            # raw → staging transformation
-│   └── sync.py                 # staging → Elasticsearch sync
+│   └── sync.py                 # staging → Elasticsearch incremental sync
 │
 ├── dags/                       # Apache Airflow DAGs
 │   ├── airflow_settings.py     # Shared constants
-│   ├── dag_etl_pipeline.py     # Full ETL: load → transform → sync
+│   ├── dag_etl_pipeline.py     # Full ETL: load → transform → sync (manual)
 │   ├── dag_sync_scheduler.py   # Hourly incremental sync
-│   └── dag_health_check.py     # Service health monitoring
+│   └── dag_health_check.py     # 30-minute service health monitoring
 │
 ├── sql/
 │   ├── init.sql                # PostgreSQL schema initialization
 │   └── queries.sql             # Reference analytics queries
 │
-├── kibana/
-│   └── kibana.yml              # Kibana configuration
-│
-├── docker/                     # (legacy, Dockerfile.etl moved to root)
+├── docker/
+│   └── Dockerfile.etl          # ETL container definition
 │
 ├── docs/                       # Technical report (.tex + PDF)
 │
@@ -275,8 +266,9 @@ ecommerce-pipeline/
 
 - `product_category_name_translation.csv` contains a UTF-8 BOM header which required special handling (`utf-8-sig` encoding).
 - Elasticsearch runs in single-node mode with security disabled — not suitable for production.
-- The `olist_geolocation` table (~1M rows) significantly increases initial load time.
+- The geolocation table (~1M rows) significantly increases initial load time.
 - Kibana index patterns must be recreated manually after `docker compose down -v` since Kibana's volume is cleared.
+- ETL services use Docker Compose profiles and must be triggered via Airflow, not started directly.
 
 ---
 
@@ -284,6 +276,5 @@ ecommerce-pipeline/
 
 | Name | Student ID | Department |
 |---|---|---|
-| Enes Yüksel | 1150230722 | AI & Data Engineering, ITU |
-| Emre Günel | — | AI & Data Engineering, ITU |
+| Enes Yüksel | 150230722 | AI & Data Engineering, ITU |
 | Enes Yemenli | 150220311 | AI & Data Engineering, ITU |
